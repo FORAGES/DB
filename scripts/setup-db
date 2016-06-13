@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+
+require "json"
+require "uri"
+
+def let(name, value)
+  define_method(name) { value }
+end
+
+def cmd(string)
+  system string || abort
+end
+
+let :db,                   "forages-db-test"
+let :port,                 "5984"
+let :image,                "marfarma/per-user-couchdb"
+let :admin_user,           "test-admin"
+let :admin_pass,           "secret"
+let :provision_admin_user, "test-provision-admin"
+let :provision_admin_pass, "secret"
+
+def curl(method = :get, path = "", data = {}, anon: false)
+  method = method.to_s.upcase
+  creds  = anon ? "" : "#{admin_user}:#{admin_pass}@"
+  url    = URI.join("http://#{creds}localhost:5984/", path)
+
+  cmd "docker exec -ti #{db} curl -X #{method} #{url} -d '#{JSON.dump(data)}'"
+end
+
+cmd "docker run -d -p #{port}:5984 --name #{db} #{image}"
+
+sleep 0.1 until (begin curl(anon: true) rescue SystemExit false end)
+
+curl :put, "_config/admins/#{admin_user}", admin_pass, anon: true
+curl :put, "_config/admins/#{provision_admin_user}", provision_admin_pass
+
+{
+  admin_username: provision_admin_user,
+  admin_password: provision_admin_pass,
+  namespace: "forages_private",
+  add_namespace_to_dbname: true,
+  db_name_format: "ns_user",
+  port: 8100
+}.each do |key, value|
+  curl :put, "_config/forages_provisioning_config/#{key}", value.to_s
+end

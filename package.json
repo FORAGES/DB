@@ -1,0 +1,14 @@
+{
+  "name": "forages-db",
+  "version": "0.0.1",
+  "dependencies": {
+    "latlon-geohash": "^1.0.1",
+    "pouchdb": "^5.4.1",
+    "pouchdb-authentication": "^0.5.1"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.10.0",
+    "mocha": "^2.5.3",
+    "should": "^9.0.2"
+  }
+}
